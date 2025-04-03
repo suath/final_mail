@@ -69,7 +69,7 @@ items = rss_soup.find_all("item")
 cards = ""
 for item in items:
     title = item.title.text
-    link = item.link.text.strip()
+    link = item.link.text.strip().replace("&", "&amp;")
     img_tag = BeautifulSoup(item.description.text, "html.parser").find("img")
     img = img_tag["src"] if img_tag else ""
 
