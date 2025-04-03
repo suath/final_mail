@@ -102,7 +102,6 @@ html_output = f"""
 <html>
 <head><meta charset="utf-8"></head>
 <body>
-<div style="font-size: 10px; color: gray;">업데이트됨: {now}</div>
 <div style="display: flex; gap: 10px; font-family: sans-serif;">
   {cards}
 </div>
