@@ -66,22 +66,32 @@ with open("feed.xml", "w", encoding="utf-8") as f:
 
 print("✅ feed.xml 생성 완료")
 
-# [latest.html 생성]
-with open("feed.xml", "r", encoding="utf-8") as f:
-    rss_soup = BeautifulSoup(f, "xml")
-
-items = rss_soup.find_all("item")
+# [latest.html 생성 – RSS 다시 쓰지 않고, 게시판 데이터 다시 파싱]
+res = requests.get(url)
+soup = BeautifulSoup(res.text, "html.parser")
+items = soup.select(".gallery_list li")[:5]
 
 cards = ""
 
 for item in items:
-    title = item.title.text
-    link = html.escape(item.link.text.strip())  # ✅ 링크 깨짐 방지!
-    img_tag = BeautifulSoup(item.description.text, "html.parser").find("img")
-    img = img_tag["src"] if img_tag else ""
+    title_tag = item.select_one("span.title a")
+    title = title_tag.text.strip()
+
+    raw_href = title_tag["href"]
+    if "reqIdx=" in raw_href:
+        req_idx = raw_href.split("reqIdx=")[-1]
+    elif "idx=" in raw_href:
+        req_idx = raw_href.split("idx=")[-1]
+    else:
+        req_idx = raw_href[-18:]
+
+    fixed_link = f"https://aict.snu.ac.kr/?p=92&amp;page=1&amp;viewMode=view&amp;reqIdx={req_idx}"  # ✅ 진짜 고정 주소
+
+    img_tag = item.select_one("span.photo img")
+    img = base_url + img_tag["src"] if img_tag else ""
 
     cards += f'''
-    <a href="{link}" target="_blank" style="text-decoration: none; color: black; width: 100px; text-align: center;">
+    <a href="{fixed_link}" target="_blank" style="text-decoration: none; color: black; width: 100px; text-align: center;">
       <img src="{img}" width="100" height="80" style="object-fit: cover; border-radius: 4px;">
       <div style="font-size: 11px; margin-top: 4px;">{title}</div>
     </a>
@@ -92,6 +102,7 @@ html_output = f"""
 <html>
 <head><meta charset="utf-8"></head>
 <body>
+<div style="font-size: 10px; color: gray;">업데이트됨: {now}</div>
 <div style="display: flex; gap: 10px; font-family: sans-serif;">
   {cards}
 </div>
@@ -103,4 +114,3 @@ with open("latest.html", "w", encoding="utf-8") as f:
     f.write(html_output)
 
 print("✅ latest.html 생성 완료")
-
