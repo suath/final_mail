@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import html
 
 # [게시판 주소 및 설정]
 url = "https://aict.snu.ac.kr/?p=92"
@@ -22,7 +23,7 @@ for item in items:
     title_tag = item.select_one("span.title a")
     title = title_tag.text.strip()
 
-    # ✅ 링크 형식 오류 해결
+    # ✅ 링크 파싱 및 reqIdx 추출
     raw_href = title_tag["href"]
     if "reqIdx=" in raw_href:
         req_idx = raw_href.split("reqIdx=")[-1]
@@ -48,6 +49,7 @@ for item in items:
   </item>
 """
 
+# [feed.xml 생성]
 rss = f"""<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
 <channel>
@@ -62,14 +64,19 @@ rss = f"""<?xml version="1.0" encoding="UTF-8" ?>
 with open("feed.xml", "w", encoding="utf-8") as f:
     f.write(rss)
 
-# [HTML 생성]
-rss_soup = BeautifulSoup(rss, "xml")
+print("✅ feed.xml 생성 완료")
+
+# [latest.html 생성]
+with open("feed.xml", "r", encoding="utf-8") as f:
+    rss_soup = BeautifulSoup(f, "xml")
+
 items = rss_soup.find_all("item")
 
 cards = ""
+
 for item in items:
     title = item.title.text
-    link = item.link.text.strip().replace("&", "&amp;")
+    link = html.escape(item.link.text.strip())  # ✅ 링크 깨짐 방지!
     img_tag = BeautifulSoup(item.description.text, "html.parser").find("img")
     img = img_tag["src"] if img_tag else ""
 
@@ -80,7 +87,7 @@ for item in items:
     </a>
     '''
 
-html = f"""
+html_output = f"""
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
@@ -93,6 +100,7 @@ html = f"""
 """
 
 with open("latest.html", "w", encoding="utf-8") as f:
-    f.write(html)
+    f.write(html_output)
 
-print("✅ feed.xml + latest.html 생성 완료")
+print("✅ latest.html 생성 완료")
+
